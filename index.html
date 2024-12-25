@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Elegant File Upload</title>
+    <style>
+        /* Resetting some default styles */
+        body, h1, h2, h3, p, div, button {
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: #f6f6f6;
+            color: #333;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            font-size: 16px;
+        }
+
+        .container {
+            background-color: #ffffff;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
+            width: 400px;
+            text-align: center;
+        }
+
+        h2 {
+            font-size: 24px;
+            color: #6a5acd;
+            margin-bottom: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            font-size: 14px;
+            color: #777;
+            text-align: left;
+            margin-bottom: 5px;
+        }
+
+        input, button {
+            width: 100%;
+            padding: 12px;
+            margin-top: 5px;
+            border-radius: 12px;
+            border: 1px solid #ddd;
+            box-sizing: border-box;
+        }
+
+        input[type="file"] {
+            padding: 8px;
+            font-size: 14px;
+        }
+
+        button {
+            background-color: #6a5acd;
+            color: white;
+            border: none;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        button:hover {
+            background-color: #5a4d99;
+        }
+
+        progress {
+            width: 100%;
+            height: 10px;
+            margin-top: 10px;
+            border-radius: 5px;
+        }
+
+        .file-preview {
+            margin-top: 20px;
+        }
+
+        .file-preview img, .file-preview video {
+            width: 100%;
+            border-radius: 10px;
+        }
+
+        .delete-btn {
+            background-color: #dc3545;
+            color: white;
+            margin-top: 10px;
+            border-radius: 10px;
+            border: none;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        .delete-btn:hover {
+            background-color: #c82333;
+        }
+
+        .upload-section {
+            display: block;
+        }
+
+        .view-files-section {
+            display: none;
+            margin-top: 20px;
+        }
+
+        .file-item {
+            text-align: left;
+            margin-bottom: 15px;
+        }
+
+        .file-item button {
+            background-color: #17a2b8;
+            margin-right: 5px;
+        }
+
+        .back-btn {
+            background-color: #28a745;
+            margin-top: 15px;
+        }
+
+        .file-item p {
+            font-size: 14px;
+            color: #333;
+        }
+
+        #uploadedFilesList {
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h2>Welcome to File Upload Service</h2>
+
+        <!-- Registration Section -->
+        <div id="registerSection" class="upload-section">
+            <h3>Register</h3>
+            <div class="form-group">
+                <label for="regUsername">Username:</label>
+                <input type="text" id="regUsername" placeholder="Create your username">
+            </div>
+            <div class="form-group">
+                <label for="regPassword">Password:</label>
+                <input type="password" id="regPassword" placeholder="Create your password">
+            </div>
+            <button id="registerBtn">Register</button>
+        </div>
+
+        <!-- Login Section -->
+        <div id="loginSection" class="upload-section" style="display: none;">
+            <h3>Login</h3>
+            <div class="form-group">
+                <label for="username">Username:</label>
+                <input type="text" id="username" placeholder="Enter your username">
+            </div>
+            <div class="form-group">
+                <label for="password">Password:</label>
+                <input type="password" id="password" placeholder="Enter your password">
+            </div>
+            <button id="loginBtn">Login</button>
+        </div>
+
+        <!-- File Upload Section -->
+        <div id="uploadSection" class="upload-section" style="display: none;">
+            <h3>Upload File</h3>
+            <div class="form-group">
+                <label for="fileInput">Choose File:</label>
+                <input type="file" id="fileInput" accept="image/*, video/*">
+            </div>
+            <progress id="uploadProgress" value="0" max="100" style="display: none;"></progress>
+            <button id="uploadBtn">Upload</button>
+            <button id="viewUploadedFilesBtn">View Uploaded Files</button>
+            <button id="deleteUserBtn" class="delete-btn">Delete Account</button>
+        </div>
+
+        <!-- Uploaded Files Section -->
+        <div id="viewFilesSection" class="view-files-section">
+            <h3>Your Uploaded Files</h3>
+            <div id="uploadedFilesList"></div>
+            <button id="backBtn" class="back-btn">Back</button>
+        </div>
+    </div>
+
+    <script>
+        const registerBtn = document.getElementById('registerBtn');
+        const loginBtn = document.getElementById('loginBtn');
+        const uploadBtn = document.getElementById('uploadBtn');
+        const deleteUserBtn = document.getElementById('deleteUserBtn');
+        const viewUploadedFilesBtn = document.getElementById('viewUploadedFilesBtn');
+        const backBtn = document.getElementById('backBtn');
+        const registerSection = document.getElementById('registerSection');
+        const loginSection = document.getElementById('loginSection');
+        const uploadSection = document.getElementById('uploadSection');
+        const viewFilesSection = document.getElementById('viewFilesSection');
+        const fileInput = document.getElementById('fileInput');
+        const uploadProgress = document.getElementById('uploadProgress');
+        const uploadedFilesList = document.getElementById('uploadedFilesList');
+
+        // Check for unique username
+        function isUsernameAvailable(username) {
+            return !localStorage.getItem(`user_${username}`);
+        }
+
+        // Register user
+        registerBtn.addEventListener('click', () => {
+            const regUsername = document.getElementById('regUsername').value;
+            const regPassword = document.getElementById('regPassword').value;
+
+            if (regUsername && regPassword) {
+                if (isUsernameAvailable(regUsername)) {
+                    localStorage.setItem(`user_${regUsername}`, JSON.stringify({ password: regPassword, files: [] }));
+                    alert('Registration successful! Please log in.');
+                    registerSection.style.display = 'none';
+                    loginSection.style.display = 'block';
+                } else {
+                    alert('Username already exists. Redirecting to login.');
+                    registerSection.style.display = 'none';
+                    loginSection.style.display = 'block';
+                }
+            } else {
+                alert('Please fill out both fields.');
+            }
+        });
+
+        // Login user
+        loginBtn.addEventListener('click', () => {
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            const userData = JSON.parse(localStorage.getItem(`user_${username}`));
+
+            if (userData && userData.password === password) {
+                alert('Login successful!');
+                loginSection.style.display = 'none';
+                uploadSection.style.display = 'block';
+                uploadBtn.dataset.username = username;
+            } else {
+                alert('Invalid username or password');
+            }
+        });
+
+        // Upload file with progress
+        uploadBtn.addEventListener('click', () => {
+            const file = fileInput.files[0];
+            const username = uploadBtn.dataset.username;
+
+            if (file && username) {
+                const reader = new FileReader();
+                reader.onprogress = function(e) {
+                    if (e.lengthComputable) {
+                        const percentLoaded = Math.round((e.loaded / e.total) * 100);
+                        uploadProgress.value = percentLoaded;
+                        uploadProgress.style.display = 'block';
+                    }
+                };
+                reader.onloadstart = function() {
+                    uploadProgress.value = 0;
+                    uploadProgress.style.display = 'block';
+                };
+                reader.onload = function(e) {
+                    const userData = JSON.parse(localStorage.getItem(`user_${username}`));
+                    userData.files.push({ name: file.name, type: file.type, data: e.target.result });
+                    localStorage.setItem(`user_${username}`, JSON.stringify(userData));
+
+                    alert('File uploaded successfully!');
+                    uploadProgress.style.display = 'none';
+                    fileInput.value = ''; // Clear file input
+                };
+                reader.readAsDataURL(file);
+            } else {
+                alert('Please select a file!');
+            }
+        });
+
+        // View uploaded files
+        viewUploadedFilesBtn.addEventListener('click', () => {
+            const username = uploadBtn.dataset.username;
+            const userData = JSON.parse(localStorage.getItem(`user_${username}`));
+
+            viewFilesSection.style.display = 'block';
+            uploadSection.style.display = 'none';
+
+            uploadedFilesList.innerHTML = '';
+            if (userData && userData.files.length > 0) {
+                userData.files.forEach((file, index) => {
+                    const fileElement = document.createElement('div');
+                    fileElement.classList.add('file-item');
+                    fileElement.innerHTML = `<p>${file.name} 
+                    <button class="download-btn">Download</button>
+                    <button class="delete-file-btn" data-index="${index}">Delete</button></p>`;
+                    
+                    // Display the correct viewer based on file type
+                    if (file.type.startsWith('image/')) {
+                        fileElement.innerHTML += `<div class="file-preview"><img src="${file.data}" alt="${file.name}"></div>`;
+                    } else if (file.type.startsWith('video/')) {
+                        fileElement.innerHTML += `<div class="file-preview"><video controls><source src="${file.data}" type="${file.type}"></video></div>`;
+                    }
+
+                    // Add event for download button
+                    fileElement.querySelector('.download-btn').addEventListener('click', () => {
+                        const a = document.createElement('a');
+                        a.href = file.data;
+                        a.download = file.name;
+                        a.click();
+                    });
+
+                    // Add event for delete button
+                    fileElement.querySelector('.delete-file-btn').addEventListener('click', (e) => {
+                        const index = e.target.getAttribute('data-index');
+                        const updatedFiles = userData.files.filter((_, i) => i !== parseInt(index));
+                        userData.files = updatedFiles;
+                        localStorage.setItem(`user_${username}`, JSON.stringify(userData));
+
+                        // Re-render the file list
+                        viewUploadedFilesBtn.click(); 
+                    });
+
+                    uploadedFilesList.appendChild(fileElement);
+                });
+            } else {
+                uploadedFilesList.innerHTML = '<p>No files uploaded yet.</p>';
+            }
+        });
+
+        // Back to upload section
+        backBtn.addEventListener('click', () => {
+            viewFilesSection.style.display = 'none';
+            uploadSection.style.display = 'block';
+        });
+
+        // Delete user account
+        deleteUserBtn.addEventListener('click', () => {
+            const username = uploadBtn.dataset.username;
+            const confirmDelete = confirm('Are you sure you want to delete your account and all uploaded files?');
+
+            if (confirmDelete) {
+                localStorage.removeItem(`user_${username}`);
+                alert('Account and all files deleted successfully!');
+                uploadSection.style.display = 'none';
+                registerSection.style.display = 'block';
+            }
+        });
+    </script>
+</body>
+</html>
